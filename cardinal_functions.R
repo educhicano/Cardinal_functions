@@ -77,10 +77,12 @@ sscg_topSegMarkers <- function(sscgdata,modelno=1,no_markers){
 }
 
 ##import spotlist from Bruker FlexImaging XML, changing Cardinal SampleNames to those in the XML
+##reduces cardinaldata to only the ROIs, for instance, if there are multiple ROIs in the XML
+##function will only take data in ROIs, all non selected data is excluded
 ##can take multiple regions, but not overlapping regions
 ##Prints "TRUE" if the reduction sampling worked
 
-sampleROIs<-function(cardinaldata, XMLdata="myxml.xml"){
+reduce_by_XML<-function(cardinaldata, XMLdata="myxml.xml"){
   
   require(XML)
   
@@ -111,4 +113,37 @@ sampleROIs<-function(cardinaldata, XMLdata="myxml.xml"){
   }
   
   cardinaldata<-do.call(combine,cardinaldatas)
+  return(cardinaldata)}
+
+##This will add a factor to the pixeldata of a cardinal ImageSet with the regions from a Bruker FlexImaging XML spotlist
+##There is no reduction performed
+##region names will be taken from name given in flexImaging to the XML file, defaults for first ROI is "ROI 01"
+##if x and y coordinates are > 3 digits, change "width" argument in formatC() function
+
+XML_ROIs<-function(cardinaldata, spotlist="myxml.xml"){
+  
+  require(XML)
+  
+  XMLspots<-xmlToList(spotlist)
+  
+  spots <-lapply(XMLspots[which(names(XMLspots) == "Class")],function(x){
+    spots <- list()
+    for(i in 1:(length(x == "Element") -1)){
+      spots[[i]] <- x[[i]][["Spot"]]
+    }
+    spots <-unlist(spots)
+    spots <-substr(spots,6,100)
+    return(spots)})
+  
+  names(spots) <- NULL
+  sampnames <- sapply(XMLspots[which(names(XMLspots) == "Class")],function(x)x$.attrs[["Name"]])
+
+  cardinaldata$regions <- NA
+  
+  for(i in seq_along(spots)){
+  cardinaldata$regions[paste0("X",formatC(coord(cardinaldata)[,1], width = 3, format = "d", flag = "0"),"Y",formatC(coord(cardinaldata)[,2], width = 3, format = "d", flag = "0")) %in% spots[[i]]] <- sampnames[i]
+  }
+  
+  cardinaldata$regions <- as.factor(cardinaldata$regions)
+  
   return(cardinaldata)}
