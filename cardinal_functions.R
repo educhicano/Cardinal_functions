@@ -12,12 +12,12 @@ ReduceDimensionParallel <- function(peaklist, mywd_=getwd(),no_clus=4){
   cl <- makeCluster(no_clus)
   clusterEvalQ(cl, library(Cardinal)) 
   clusterExport(cl, "imzmllist") 
-  clusterExport(cl, "peaklist")
+  clusterExport(cl, "ppeaklist")
   
   peakdata <- parLapply(cl, imzmllist, function(x){
     rawd <-readImzML(x,folder=mywd)
     rawd <-normalize(rawd, method=c("tic"))
-    peakd <- reduceDimension(rawd, ref = peaklist, type = "height")
+    peakd <- reduceDimension(rawd, ref = ppeaklist, type = "height")
     rm(rawd)
     gc()
     return(peakd)
