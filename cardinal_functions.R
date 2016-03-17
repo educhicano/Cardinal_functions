@@ -147,3 +147,22 @@ XML_ROIs<-function(cardinaldata, spotlist="myxml.xml"){
   cardinaldata$regions <- as.factor(cardinaldata$regions)
   
   return(cardinaldata)}
+
+
+##get a table of mean, sd, cv for all mass bins in a cardinal dataset by a subset, meant for picked peak data
+##grouping is how the data is to be subsetted and is the name of the vector in the cardinal pixelData
+##to go simply by same name grouping="sample"
+
+ROI_analysis <- function(cardinaldata,grouping="regions"){
+  
+  cardinaldata_df <- data.frame(pData(cardinaldata)[grouping],t(iData(cardinaldata)))
+  colnames(cardinaldata_df) <- c(paste(grouping),fData(cardinaldata)$mz)
+  cardinaldata_df<-na.omit(cardinaldata_df)[1:length(cardinaldata_df)]
+  
+  melted <- melt(cardinaldata_df,variable.name = "mass")
+  analysisoutput<-ddply(melted, c(paste0(grouping), "mass"), summarise,
+                        mean = mean(value), sd = sd(value),
+                        cv = sd(value)/mean(value)
+  )
+  return(analysisoutput) 
+}
